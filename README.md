@@ -1,10 +1,10 @@
 # Zendesk Article Dump
 
-A Go application that dumps Zendesk Help Center articles to Markdown format.
+A Go application that dumps publicly available Zendesk Help Center articles to Markdown format.
 
 ## Features
 
-- Fetches all articles from your Zendesk Help Center
+- Fetches all public articles from your Zendesk Help Center
 - Converts articles to Markdown format
 - Supports pagination for large article collections
 - Preserves article metadata (ID, URL, creation date, etc.)
@@ -13,8 +13,7 @@ A Go application that dumps Zendesk Help Center articles to Markdown format.
 ## Prerequisites
 
 - Go 1.24 or later
-- Zendesk account with API access
-- API token from Zendesk
+- Public Zendesk Help Center URL
 
 ## Setup
 
@@ -24,21 +23,17 @@ A Go application that dumps Zendesk Help Center articles to Markdown format.
    cd zendesk-article-dump
    ```
 
-2. Copy the example environment file and edit it with your Zendesk credentials:
+2. Copy the example environment file and edit it with your Zendesk subdomain:
    ```bash
    cp .env.example .env
    ```
 
-3. Edit `.env` file with your Zendesk credentials:
+3. Edit `.env` file with your Zendesk subdomain:
    ```
    ZENDESK_SUBDOMAIN=your-subdomain
-   ZENDESK_EMAIL=your-email@example.com
-   ZENDESK_API_TOKEN=your-api-token
    ```
 
    - `ZENDESK_SUBDOMAIN`: Your Zendesk subdomain (if your Zendesk URL is `https://example.zendesk.com`, then your subdomain is `example`)
-   - `ZENDESK_EMAIL`: Your Zendesk email address
-   - `ZENDESK_API_TOKEN`: Your Zendesk API token
 
 ## Usage
 
@@ -79,7 +74,7 @@ Article content in Markdown format...
 ## Error Handling
 
 The application includes error handling for:
-- Missing environment variables
+- Missing subdomain configuration
 - API connection issues
 - File system operations
 - Invalid responses

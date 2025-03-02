@@ -31,12 +31,10 @@ type ArticlesResponse struct {
 func main() {
 	// Get environment variables
 	subdomain := os.Getenv("ZENDESK_SUBDOMAIN")
-	email := os.Getenv("ZENDESK_EMAIL")
-	token := os.Getenv("ZENDESK_API_TOKEN")
 
-	if subdomain == "" || email == "" || token == "" {
-		fmt.Println("Error: Required environment variables are not set")
-		fmt.Println("Please set ZENDESK_SUBDOMAIN, ZENDESK_EMAIL, and ZENDESK_API_TOKEN")
+	if subdomain == "" {
+		fmt.Println("Error: Required environment variable is not set")
+		fmt.Println("Please set ZENDESK_SUBDOMAIN")
 		os.Exit(1)
 	}
 
@@ -55,7 +53,7 @@ func main() {
 	nextPage := baseURL
 
 	for nextPage != "" {
-		articles, next, err := fetchArticles(client, nextPage, email, token)
+		articles, next, err := fetchArticles(client, nextPage)
 		if err != nil {
 			fmt.Printf("Error fetching articles: %v\n", err)
 			os.Exit(1)
@@ -75,13 +73,11 @@ func main() {
 	fmt.Println("Article dump completed successfully!")
 }
 
-func fetchArticles(client *http.Client, url, email, token string) ([]Article, string, error) {
+func fetchArticles(client *http.Client, url string) ([]Article, string, error) {
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
 		return nil, "", fmt.Errorf("error creating request: %v", err)
 	}
-
-	req.SetBasicAuth(email+"/token", token)
 
 	resp, err := client.Do(req)
 	if err != nil {
