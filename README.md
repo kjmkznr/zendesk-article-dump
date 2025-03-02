@@ -23,35 +23,41 @@ A Go application that dumps publicly available Zendesk Help Center articles to M
    cd zendesk-article-dump
    ```
 
-2. Copy the example environment file and edit it with your Zendesk subdomain:
-   ```bash
-   cp .env.example .env
-   ```
-
-3. Edit `.env` file with your Zendesk subdomain:
-   ```
-   ZENDESK_SUBDOMAIN=your-subdomain
-   ```
-
-   - `ZENDESK_SUBDOMAIN`: Your Zendesk subdomain (if your Zendesk URL is `https://example.zendesk.com`, then your subdomain is `example`)
-
-## Usage
-
-1. Build the application:
+2. Build the application:
    ```bash
    go build
    ```
 
-2. Run the application:
-   ```bash
-   ./zendesk-article-dump
-   ```
+## Usage
+
+Run the application with the required subdomain parameter:
+
+```bash
+./zendesk-article-dump -subdomain=your-subdomain
+```
+
+### Parameters
+
+- `-subdomain` (required): Your Zendesk subdomain (if your Zendesk URL is `https://example.zendesk.com`, then your subdomain is `example`)
+- `-output` (optional): Output directory for markdown files (default: "articles")
+
+### Examples
+
+Basic usage:
+```bash
+./zendesk-article-dump -subdomain=example
+```
+
+Specify custom output directory:
+```bash
+./zendesk-article-dump -subdomain=example -output=docs
+```
 
 The application will:
-1. Create an `articles` directory in the current folder
-2. Download all articles from your Zendesk Help Center
+1. Create the specified output directory (default: `articles`) if it doesn't exist
+2. Download all public articles from your Zendesk Help Center
 3. Convert each article to Markdown format
-4. Save articles as individual files named `{id}-{title}.md`
+4. Save articles as individual files named `{id}-{title}.md` in the output directory
 
 ## Output Format
 

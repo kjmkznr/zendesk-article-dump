@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"io"
 	"net/http"
@@ -29,17 +30,23 @@ type ArticlesResponse struct {
 }
 
 func main() {
-	// Get environment variables
-	subdomain := os.Getenv("ZENDESK_SUBDOMAIN")
+	// Parse command line arguments
+	var (
+		subdomain string
+		outputDir string
+	)
+	flag.StringVar(&subdomain, "subdomain", "", "Zendesk subdomain (required)")
+	flag.StringVar(&outputDir, "output", "articles", "Output directory for markdown files")
+	flag.Parse()
 
 	if subdomain == "" {
-		fmt.Println("Error: Required environment variable is not set")
-		fmt.Println("Please set ZENDESK_SUBDOMAIN")
+		fmt.Println("Error: Required argument is not provided")
+		fmt.Println("Usage:")
+		flag.PrintDefaults()
 		os.Exit(1)
 	}
 
 	// Create output directory
-	outputDir := "articles"
 	if err := os.MkdirAll(outputDir, 0755); err != nil {
 		fmt.Printf("Error creating output directory: %v\n", err)
 		os.Exit(1)
