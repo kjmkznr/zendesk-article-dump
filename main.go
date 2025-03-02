@@ -108,7 +108,7 @@ func fetchArticles(client *http.Client, url string) ([]Article, string, error) {
 func saveArticleAsMarkdown(article Article, outputDir string) error {
 	// Create filename from article title
 	filename := fmt.Sprintf("%d-%s.md", article.ID, sanitizeFilename(article.Title))
-	filepath := filepath.Join(outputDir, filename)
+	outputPath := filepath.Join(outputDir, filename)
 
 	// Create markdown content
 	content := fmt.Sprintf("# %s\n\n", article.Title)
@@ -120,7 +120,7 @@ func saveArticleAsMarkdown(article Article, outputDir string) error {
 	content += fmt.Sprintf("---\n\n%s\n", article.Body)
 
 	// Write to file
-	return os.WriteFile(filepath, []byte(content), 0644)
+	return os.WriteFile(outputPath, []byte(content), 0644)
 }
 
 func sanitizeFilename(filename string) string {
