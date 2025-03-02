@@ -1,1 +1,18 @@
 .idea
+.env
+*.env
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Output directory
+/articles/
+
+# Go workspace file
+go.work
