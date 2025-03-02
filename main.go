@@ -90,7 +90,11 @@ func fetchArticles(client *http.Client, url string) ([]Article, string, error) {
 	if err != nil {
 		return nil, "", fmt.Errorf("error making request: %v", err)
 	}
-	defer resp.Body.Close()
+	defer func() {
+		if err := resp.Body.Close(); err != nil && err == nil {
+			err = fmt.Errorf("error closing response body: %v", err)
+		}
+	}()
 
 	if resp.StatusCode != http.StatusOK {
 		body, _ := io.ReadAll(resp.Body)
@@ -102,7 +106,7 @@ func fetchArticles(client *http.Client, url string) ([]Article, string, error) {
 		return nil, "", fmt.Errorf("error decoding response: %v", err)
 	}
 
-	return response.Articles, response.Next, nil
+	return response.Articles, response.Next, err
 }
 
 func saveArticleAsMarkdown(article Article, outputDir string) error {
