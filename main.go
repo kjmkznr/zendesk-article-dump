@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 )
 
 type Article struct {
@@ -110,8 +109,8 @@ func fetchArticles(client *http.Client, url string) ([]Article, string, error) {
 }
 
 func saveArticleAsMarkdown(article Article, outputDir string) error {
-	// Create filename from article title
-	filename := fmt.Sprintf("%d-%s.md", article.ID, sanitizeFilename(article.Title))
+	// Create filename using only article ID
+	filename := fmt.Sprintf("%d.md", article.ID)
 	outputPath := filepath.Join(outputDir, filename)
 
 	// Create markdown content
@@ -125,22 +124,4 @@ func saveArticleAsMarkdown(article Article, outputDir string) error {
 
 	// Write to file
 	return os.WriteFile(outputPath, []byte(content), 0644)
-}
-
-func sanitizeFilename(filename string) string {
-	// Replace invalid characters with underscore
-	filename = strings.Map(func(r rune) rune {
-		if strings.ContainsRune(`<>:"/\|?*`, r) {
-			return '_'
-		}
-		return r
-	}, filename)
-
-	// Trim spaces and limit length
-	filename = strings.TrimSpace(filename)
-	if len(filename) > 100 {
-		filename = filename[:100]
-	}
-
-	return filename
 }
