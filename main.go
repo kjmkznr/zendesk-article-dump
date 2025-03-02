@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 type Article struct {
@@ -31,11 +32,13 @@ type ArticlesResponse struct {
 func main() {
 	// Parse command line arguments
 	var (
-		subdomain string
-		outputDir string
+		subdomain     string
+		outputDir     string
+		combineOutput bool
 	)
 	flag.StringVar(&subdomain, "subdomain", "", "Zendesk subdomain (required)")
 	flag.StringVar(&outputDir, "output", "articles", "Output directory for markdown files")
+	flag.BoolVar(&combineOutput, "combine", false, "Combine all articles into a single file")
 	flag.Parse()
 
 	if subdomain == "" {
@@ -54,6 +57,9 @@ func main() {
 	// Initialize HTTP client
 	client := &http.Client{}
 
+	// Initialize articles slice for combined output
+	var allArticles []Article
+
 	// Fetch articles
 	baseURL := fmt.Sprintf("https://%s.zendesk.com/api/v2/help_center/articles.json", subdomain)
 	nextPage := baseURL
@@ -66,14 +72,29 @@ func main() {
 		}
 
 		// Process articles
-		for _, article := range articles {
-			if err := saveArticleAsMarkdown(article, outputDir); err != nil {
-				fmt.Printf("Error saving article %d: %v\n", article.ID, err)
-				continue
+		if combineOutput {
+			// For combined output, collect all articles first
+			allArticles = append(allArticles, articles...)
+		} else {
+			// For individual files, save each article separately
+			for _, article := range articles {
+				if err := saveArticleAsMarkdown(article, outputDir); err != nil {
+					fmt.Printf("Error saving article %d: %v\n", article.ID, err)
+					continue
+				}
 			}
 		}
 
 		nextPage = next
+	}
+
+	// If combining output, save all articles to a single file
+	if combineOutput {
+		combinedFile := filepath.Join(outputDir, "articles.md")
+		if err := saveArticlesCombined(allArticles, combinedFile); err != nil {
+			fmt.Printf("Error saving combined articles: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	fmt.Println("Article dump completed successfully!")
@@ -121,6 +142,40 @@ func saveArticleAsMarkdown(article Article, outputDir string) error {
 	content += fmt.Sprintf("- Updated: %s\n", article.UpdatedAt)
 	content += fmt.Sprintf("- Locale: %s\n\n", article.Locale)
 	content += fmt.Sprintf("---\n\n%s\n", article.Body)
+
+	// Write to file
+	return os.WriteFile(outputPath, []byte(content), 0644)
+}
+
+func saveArticlesCombined(articles []Article, outputPath string) error {
+	if len(articles) == 0 {
+		return fmt.Errorf("no articles to save")
+	}
+
+	var content string
+	for i, article := range articles {
+		// Add separator between articles
+		if i > 0 {
+			content += "\n\n" + strings.Repeat("-", 50) + "\n\n"
+		}
+
+		// Add article content in the same format as individual files
+		content += fmt.Sprintf("# %s\n\n", article.Title)
+		content += fmt.Sprintf("- ID: %d\n", article.ID)
+		content += fmt.Sprintf("- URL: %s\n", article.HTMLUrl)
+		content += fmt.Sprintf("- Created: %s\n", article.CreatedAt)
+		content += fmt.Sprintf("- Updated: %s\n", article.UpdatedAt)
+		content += fmt.Sprintf("- Locale: %s\n\n", article.Locale)
+		content += fmt.Sprintf("---\n\n%s", article.Body)
+	}
+
+	// Ensure content ends with a newline
+	content += "\n"
+
+	// Create directory if it doesn't exist
+	if err := os.MkdirAll(filepath.Dir(outputPath), 0755); err != nil {
+		return fmt.Errorf("error creating output directory: %v", err)
+	}
 
 	// Write to file
 	return os.WriteFile(outputPath, []byte(content), 0644)

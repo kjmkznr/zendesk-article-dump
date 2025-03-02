@@ -9,6 +9,7 @@ A Go application that dumps publicly available Zendesk Help Center articles to M
 - Supports pagination for large article collections
 - Preserves article metadata (ID, URL, creation date, etc.)
 - Handles special characters in filenames
+- Option to combine all articles into a single markdown file
 
 ## Prerequisites
 
@@ -40,10 +41,11 @@ Run the application with the required subdomain parameter:
 
 - `-subdomain` (required): Your Zendesk subdomain (if your Zendesk URL is `https://example.zendesk.com`, then your subdomain is `example`)
 - `-output` (optional): Output directory for markdown files (default: "articles")
+- `-combine` (optional): Boolean flag to combine all articles into a single file (default: false)
 
 ### Examples
 
-Basic usage:
+Basic usage (separate files):
 ```bash
 ./zendesk-article-dump -subdomain=example
 ```
@@ -53,15 +55,26 @@ Specify custom output directory:
 ./zendesk-article-dump -subdomain=example -output=docs
 ```
 
+Combine all articles into a single file:
+```bash
+./zendesk-article-dump -subdomain=example -combine
+```
+
+Note: When using -combine, articles will be combined into a file named 'combined.md' in the output directory
+
 The application will:
 1. Create the specified output directory (default: `articles`) if it doesn't exist
 2. Download all public articles from your Zendesk Help Center
 3. Convert each article to Markdown format
-4. Save articles as individual files named `{id}-{title}.md` in the output directory
+4. Either:
+   - Save articles as individual files in the output directory (default behavior)
+   - Combine all articles into a single file if -combine is specified
 
 ## Output Format
 
-Each article is saved as a Markdown file with the following structure:
+### Individual Files (Default)
+
+When saving articles individually, each article is saved as a separate Markdown file with the following structure:
 
 ```markdown
 # Article Title
@@ -75,6 +88,38 @@ Each article is saved as a Markdown file with the following structure:
 ---
 
 Article content in Markdown format...
+```
+
+### Combined File
+
+When using the `-combine` flag, all articles are combined into a single file named 'combined.md' in the output directory. Articles are separated by a horizontal line and follow the same format as individual files:
+
+```markdown
+# First Article Title
+
+- ID: 123456
+- URL: https://example.zendesk.com/hc/en-us/articles/123456
+- Created: 2024-03-02T10:00:00Z
+- Updated: 2024-03-02T10:00:00Z
+- Locale: en-us
+
+---
+
+First article content...
+
+--------------------------------------------------
+
+# Second Article Title
+
+- ID: 789012
+- URL: https://example.zendesk.com/hc/en-us/articles/789012
+- Created: 2024-03-02T11:00:00Z
+- Updated: 2024-03-02T11:00:00Z
+- Locale: en-us
+
+---
+
+Second article content...
 ```
 
 ## Error Handling
