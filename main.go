@@ -8,8 +8,70 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 )
+
+func cleanupHTML(content string) string {
+	// Remove script tags and their content
+	content = regexp.MustCompile(`(?s)<script.*?</script>`).ReplaceAllString(content, "")
+
+	// Convert images to markdown format
+	content = regexp.MustCompile(`<img[^>]*src="([^"]*)"[^>]*alt="([^"]*)"[^>]*(?:width="([^"]*)")?[^>]*(?:height="([^"]*)")?[^>]*>`).ReplaceAllStringFunc(content, func(img string) string {
+		re := regexp.MustCompile(`src="([^"]*)"`)
+		srcMatch := re.FindStringSubmatch(img)
+		src := srcMatch[1]
+
+		re = regexp.MustCompile(`alt="([^"]*)"`)
+		altMatch := re.FindStringSubmatch(img)
+		alt := ""
+		if len(altMatch) > 1 {
+			alt = altMatch[1]
+		}
+
+		return fmt.Sprintf("![%s](%s)", alt, src)
+	})
+
+	// Convert headers (h1-h6) with any attributes
+	for i := 6; i >= 1; i-- {
+		pattern := fmt.Sprintf(`(?s)<h%d[^>]*>(.*?)</h%d>`, i, i)
+		replacement := fmt.Sprintf("\n%s $1\n", strings.Repeat("#", i))
+		content = regexp.MustCompile(pattern).ReplaceAllString(content, replacement)
+	}
+
+	// Convert pre tags to code blocks with any attributes
+	content = regexp.MustCompile(`(?s)<pre[^>]*>(.*?)</pre>`).ReplaceAllString(content, "\n```\n$1\n```\n")
+
+	// Convert links with any attributes
+	content = regexp.MustCompile(`<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>`).ReplaceAllString(content, "[$2]($1)")
+
+	// Convert lists (handle nested lists)
+	content = regexp.MustCompile(`(?s)<[uo]l[^>]*>.*?</[uo]l>`).ReplaceAllStringFunc(content, func(list string) string {
+		// Convert list items to markdown format
+		list = regexp.MustCompile(`<li[^>]*>(.*?)</li>`).ReplaceAllString(list, "- $1\n")
+		// Remove the ul/ol tags
+		list = regexp.MustCompile(`</?[uo]l[^>]*>`).ReplaceAllString(list, "\n")
+		return list
+	})
+
+	// Convert br tags to newlines (handle self-closing tags)
+	content = regexp.MustCompile(`<br[^>]*>`).ReplaceAllString(content, "\n")
+
+	// Convert paragraphs and other block elements with any attributes
+	content = regexp.MustCompile(`<(?:p|div|span)[^>]*>(.*?)</(?:p|div|span)>`).ReplaceAllString(content, "$1\n\n")
+
+	// Remove any remaining HTML tags and their attributes
+	content = regexp.MustCompile(`<[^>]+>`).ReplaceAllString(content, "")
+
+	// Fix multiple newlines (3 or more become 2)
+	content = regexp.MustCompile(`\n{3,}`).ReplaceAllString(content, "\n\n")
+
+	// Fix multiple spaces
+	content = regexp.MustCompile(`[ \t]+`).ReplaceAllString(content, " ")
+
+	// Trim spaces and normalize newlines
+	return strings.TrimSpace(content)
+}
 
 type Article struct {
 	ID        int64  `json:"id"`
@@ -141,7 +203,7 @@ func saveArticleAsMarkdown(article Article, outputDir string) error {
 	content += fmt.Sprintf("- Created: %s\n", article.CreatedAt)
 	content += fmt.Sprintf("- Updated: %s\n", article.UpdatedAt)
 	content += fmt.Sprintf("- Locale: %s\n\n", article.Locale)
-	content += fmt.Sprintf("---\n\n%s\n", article.Body)
+	content += fmt.Sprintf("---\n\n%s\n", cleanupHTML(article.Body))
 
 	// Write to file
 	return os.WriteFile(outputPath, []byte(content), 0644)
@@ -166,7 +228,7 @@ func saveArticlesCombined(articles []Article, outputPath string) error {
 		content += fmt.Sprintf("- Created: %s\n", article.CreatedAt)
 		content += fmt.Sprintf("- Updated: %s\n", article.UpdatedAt)
 		content += fmt.Sprintf("- Locale: %s\n\n", article.Locale)
-		content += fmt.Sprintf("---\n\n%s", article.Body)
+		content += fmt.Sprintf("---\n\n%s", cleanupHTML(article.Body))
 	}
 
 	// Ensure content ends with a newline
